@@ -1,7 +1,7 @@
 <?php
 
 /*
- * 
+ * This file is part of the Symfony package.
  *
  * (c) Gonzie <hello@gonz.ie>
  *
@@ -10,77 +10,25 @@
  */
 namespace Gonzie\PDOLoad;
 
+use Gonzie\PDOLoad\PDOLoadException;
+
 /**
  * [PDOLoad description]
  */
 class PDOLoad
 {
-    /**
-     * [DEFAULT_DRIVER description]
-     * @var string
-     */
     const DEFAULT_DRIVER = 'mysql';
-
-    /**
-     * [DEFAULT_PORT description]
-     * @var [type]
-     */
     const DEFAULT_PORT = null;
+    const DEFAULT_ALLOWED = ['user', 'password', 'dbname', 'driver', 'port'];
 
-    /**
-     * [DEFAULT_CHARSET description]
-     * @var [type]
-     */
-    const DEFAULT_CHARSET = 'utf8mb4';
-
-    /**
-     * [DEFAULT_ALLOWED description]
-     * @var array
-     */
-    const DEFAULT_ALLOWED = ['user', 'password', 'dbname', 'driver', 'port', 'charset'];
-
-    /**
-     * [protected description]
-     * @var [type]
-     */
-    protected $overwrite_allowed = false;
-
-    /**
-     * [protected description]
-     * @var [type]
-     */
     protected $options;
 
-    /**
-     * [protected description]
-     * @var [type]
-     */
     protected $reader;
-
-    /**
-     * [protected description]
-     * @var [type]
-     */
     protected $writer;
 
-
-    /**
-     * [protected description]
-     * @var [type]
-     */
     protected $pdo_reader;
-
-    /**
-     * [protected description]
-     * @var [type]
-     */
     protected $pdo_writer;
 
-
-    /**
-     * [protected description]
-     * @var [type]
-     */
     protected $transaction = false;
 
     /**
@@ -89,10 +37,6 @@ class PDOLoad
      */
     protected $balancer;
 
-    /**
-     * [protected description]
-     * @var [type]
-     */
     protected $attributes;
 
 
@@ -106,8 +50,8 @@ class PDOLoad
     {
         $this->options = $options;
 
-        if (is_string($options)) {
-            if (empty($options)) {
+        if ('string' === gettype($options)) {
+            if(empty($options)) {
                 throw new PDOLoadException('Invalid connection settings.');
             }
 
@@ -126,13 +70,8 @@ class PDOLoad
             throw new PDOLoadException('At least one writer connection must be defined.');
         }
 
-
-        if (isset($options['overwrite_allowed'])) {
-            $this->overwrite_allowed = $options['overwrite_allowed'];
-        }
-
         foreach ($options as $key => $val) {
-            if (in_array($key, self::DEFAULT_ALLOWED) || $this->overwrite_allowed) {
+            if (in_array($key, self::DEFAULT_ALLOWED)) {
                 $this->{'default_' . $key} = $val;
             }
         }
@@ -323,10 +262,7 @@ class PDOLoad
      */
     public function query()
     {
-        $this->validate('writer');
-
-        // Need to think of a better way of using query()
-        return call_user_func_array([$this->pdo_writer, 'query'], func_get_args());
+        // To be done at a later date
     }
 
 
@@ -418,30 +354,6 @@ class PDOLoad
 
 
     /**
-     * If all hell breaks loose and you're calling a function not covered by PDOLoad
-     * @param  [type] $name      [description]
-     * @param  [type] $arguments [description]
-     * @return [type]            [description]
-     */
-    public function __call($name, $arguments)
-    {
-      return call_user_func_array([$this->pdo_writer, $name], $arguments);
-    }
-
-
-    /**
-     * If all hell breaks loose and you're calling a function not covered by PDOLoad
-     * @param  [type] $name      [description]
-     * @param  [type] $arguments [description]
-     * @return [type]            [description]
-     */
-    public static function __callStatic($name, $arguments)
-    {
-      return call_user_func_array([PDO, $name], $arguments);
-    }
-
-
-    /**
      * [getConnection description]
      *
      * @param  [type] $statement [description]
@@ -476,17 +388,18 @@ class PDOLoad
      */
     private function initPDO($options)
     {
-        if ($options instanceof \PDO) {
+        if ('object' === gettype($options) && is_a($options, 'PDO')) {
             return $options;
         }
 
         $dbh =  new \PDO(
             sprintf(
-                "%s:host=%s;dbname=%s%s",
+                "%s:host=%s;dbname=%s%s%s",
                 $options['driver'],
                 $options['host'],
                 $options['dbname'],
-                ($options['port'] ? ";port=" . $options['port'] : '')
+                ($options['port'] ? ";port=" . $options['port'] : ''),
+		($options['charset'] ? ";charset=" . $options['charset'] : '')
             ),
             $options['user'],
             $options['password']
@@ -558,7 +471,7 @@ class PDOLoad
             'password' => $options['password'] ?? $this->default_password ?? '',
             'port' => $options['port'] ?? $this->default_port ??  self::DEFAULT_PORT,
             'driver' => $options['driver'] ?? $this->default_driver ?? self::DEFAULT_DRIVER,
-            'charset' => $options['charset'] ?? $this->default_charset ?? self::DEFAULT_CHARSET,
+	    'charset' => $options['charset'] ?? $this->default_charset ?? '',
         ];
     }
 

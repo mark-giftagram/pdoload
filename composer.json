@@ -1,5 +1,5 @@
 {
-    "name": "gonzie/pdoload",
+    "name": "mark-giftagram/pdoload",
     "description": "Small PDO wrapper to provide read/write split and load balancing in one line of code.",
     "keywords": ["load balancing", "read write", "pdo", "load balancer"],
     "type": "package",
@@ -13,7 +13,7 @@
     },
     "license": "MIT",
     "authors": [{
-        "name": "gonzie",
+        "name": "gonzie / mark-giftagram",
         "email": "hello@gon.zie"
     }],
     "autoload": {
